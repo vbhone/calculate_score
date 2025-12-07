@@ -185,7 +185,7 @@ def write_fin_score(file_name,fin_score_46):
 if __name__ == '__main__':
     # 统计平时成绩程序
 
-    stu_class=['计科2301','计科2302','计科2303','计科2304']
+    stu_class=['班级1','班级2','班级3','班级4']
     for i in stu_class:
         file_path = str(i)+"_统计一键导出.xlsx"
         if not os.path.exists(file_path):
