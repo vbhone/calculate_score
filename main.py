@@ -2,6 +2,7 @@ import pandas as pd
 import warnings
 import shutil
 import os
+from datetime import datetime
 import math
 table_info = ['序号', '班级', '学号', '姓名', '性别', '旷课次数', '请假次数', '迟到早退次数', '考勤总次数','考勤分数', '作业1',
               '作业2', '作业3', '作业成绩总和', '实验1', '实验2', '实验3', '实验成绩总和', '平时成绩总分']
@@ -12,7 +13,8 @@ full_marks=[]
 def read_excel(file_path):
     df = pd.read_excel(file_path, sheet_name='作业统计')
     df_check_in = pd.read_excel(file_path, sheet_name='签到详情统计')
-    df_class_points = pd.read_excel(file_path, sheet_name='综合成绩（各权重项百分制得分）')
+    # df_class_points = pd.read_excel(file_path, sheet_name='综合成绩（各权重项百分制得分）')
+    df_class_points=[]
     return df,df_check_in,df_class_points
 
 # 统计考勤信息
@@ -46,27 +48,25 @@ def get_check_in(df_check_in):
 # 确定计分方式，由用户分别输入六个分数分别由哪几项作业构成
 def score_method(df):
     score_method_file=open("score_method.txt", 'r', encoding='utf-8')
-
-    col_index = []
-    col_name = []
+    exercide_item={}
+    # col_index = []
+    # col_name = []
     # 第一行记录了所有作业项
     for col_num, cell_value in enumerate(df.iloc[1], start=1):
         if pd.isna(cell_value):
             pass
         else:
-            col_index.append(col_num-1)
-            col_name.append(cell_value)
+            exercide_item[cell_value]=col_num-1
     print("所有作业和实验列表：")
-    for i in range(len(col_name)):
-        print(col_index[i], col_name[i])
-    print("请选择六个分数对应的作业/实验项，输入每一项前面的序号，有多项用空格分隔：")
+    for index,value in exercide_item.items():
+        print(index, value)
     score = []
     # with open(file_path, 'r', encoding='utf-8') as f:
     for i in range(1, 7):
         print("第" + str(i) + "个分数对应的作业实验项：")
-        temp=score_method_file.readline().split(" ")
-        temp=[int(x) for x in temp]
-        score.append(temp)
+        temp=score_method_file.readline().rstrip('\n').split(",")
+        temp_ind=[int(exercide_item[x]) for x in temp]
+        score.append(temp_ind)
     # score：6*p的二维数组，记录了每个分数需要计算的作业项，在excel对应的列号，col_index:作业项在excel中对应的列号
     return score
 
@@ -166,32 +166,18 @@ def write_fin_score(file_name,fin_score_46):
     with pd.ExcelWriter(file_name, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         df_scores.to_excel(writer, sheet_name='最终平均成绩', index=False)
 
-# 我看了一下今年大部分人没有加分。最多加分的同学为7分，所以加分方式为除以2向上取整
-# def add_point(fin_score_46,df_class_points):
-#     class_point={}
-#     for i in range(2, len(df_class_points)):
-#         class_point[df_class_points.iloc[i][1]]=math.ceil(df_class_points.iloc[i][11]/2)
-#     for i in range(len(fin_score_46)):
-#         temp_point=class_point[fin_score_46[i]['学号']]
-#         while temp_point:
-#
-#
-#             temp_point=temp_point-1
-#
-#     print(class_point)
-    # return class_point
-
-
 if __name__ == '__main__':
     # 统计平时成绩程序
 
-    stu_class=['班级1','班级2','班级3','班级4']
+    stu_class=['计科2301','计科2302','计科2303','计科2304']
     for i in stu_class:
         file_path = str(i)+"_统计一键导出.xlsx"
         if not os.path.exists(file_path):
             print("不存在"+str(i)+"班成绩文件")
             continue
-        result_path="result"+file_path
+        now = datetime.now()
+
+        result_path=str(now.hour)+"."+str(now.minute)+"result"+file_path
         shutil.copy2(file_path, result_path)
         df,df_check_in,df_class_points=read_excel(file_path)
         check_in=get_check_in(df_check_in)
